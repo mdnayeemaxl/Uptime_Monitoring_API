@@ -82,8 +82,6 @@ handler._users.get = (requestProperties, callback) => {
 };
 
 handler._users.put = (requestProperties, callback) => {
-    console.dir(requestProperties.body.phone);
-
     const phone = requestProperties.body.phone.length === 11 ? requestProperties.body.phone : false;
 
     const firstName =        requestProperties.body.firstName.trim().length > 0
@@ -97,7 +95,7 @@ handler._users.put = (requestProperties, callback) => {
         if (firstName || lastName || password) {
             // look up the user
             data.read('users', phone, (err7, udata) => {
-                const userData = { ...udata };
+                const userData = { ...parseJSON(udata) };
                 console.log(err7);
                 console.log(userData);
                 if (!err7 && userData) {
@@ -129,6 +127,25 @@ handler._users.put = (requestProperties, callback) => {
         callback(400, { err: 'Invalid phone Number' });
     }
 };
-handler._users.delete = (requestProperties, callback) => {};
+handler._users.delete = (requestProperties, callback) => {
+    const phone =        requestProperties.queryStringObject.phone.trim().length === 11
+            ? requestProperties.queryStringObject.phone
+            : false;
+    if (phone) {
+        data.read('users', phone, (err99, userdata) => {
+            if (!err99 && userdata) {
+                data.delete('users', phone, (err8) => {
+                    if (!err8) {
+                        callback(200, { message: 'user successfully created' });
+                    }
+                });
+            } else {
+                callback(400, { error: 'There is a problem in your request' });
+            }
+        });
+    } else {
+        callback(400, { error: 'There is a problem in your request' });
+    }
+};
 
 module.exports = handler;
