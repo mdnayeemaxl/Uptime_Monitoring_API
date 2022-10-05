@@ -33,7 +33,6 @@ handler.handleReqRes = (req, res) => {
     };
 
     const chosenHandler = routes[trimmedPath] ? routes[trimmedPath] : notFoundHandler;
-
     req.on('data', (buffer) => {
         realData += decoder.write(buffer); // Jokhon post method e data ashbe req object er
         // upor data event fire kore buffer er modhe ashte thaka data gulo ke reade kore decode
