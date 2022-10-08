@@ -72,7 +72,66 @@ handler._token.get = (requestProperties, callback) => {
     }
 };
 
-handler._token.put = (requestProperties, callback) => {};
-handler._token.delete = (requestProperties, callback) => {};
+handler._token.put = (requestProperties, callback) => {
+    const id = requestProperties.body.id.trim().length === 20 ? requestProperties.body.id : false;
+
+    const extend = requestProperties.body.extend === true;
+    if (id && extend) {
+        data.read('tokens', id, (err1, tokenData) => {
+            const tokenObject = parseJSON(tokenData);
+            if (tokenObject.expires > Date.now()) {
+                tokenObject.expires = Date.now() + 60 * 60 * 1000;
+                // store the update token
+                data.update('tokens', id, tokenObject, (err2) => {
+                    if (!err2) {
+                        callback(200);
+                    } else {
+                        callback(500, { error: 'Token already expired' });
+                    }
+                });
+            } else {
+                callback(400, { error: 'Token Already Expire' });
+            }
+        });
+    } else {
+        callback(400, { error: 'Requested token was not Found' });
+    }
+};
+
+handler._token.delete = (requestProperties, callback) => {
+    // delete token means user logout
+    const id =        requestProperties.queryStringObject.id.trim().length === 20
+            ? requestProperties.queryStringObject.id
+            : false;
+    if (id) {
+        data.read('tokens', id, (err1, tokendata) => {
+            if (!err1 && tokendata) {
+                data.delete('tokens', id, (err2) => {
+                    if (!err2) {
+                        callback(200, { message: 'Token successfully deleted' });
+                    }
+                });
+            } else {
+                callback(400, { error: 'There is a problem in your request' });
+            }
+        });
+    } else {
+        callback(400, { error: 'There is a problem in your request' });
+    }
+};
+
+handler._token.verify = (id, phone, callback) => {
+    data.read('tokens', id, (err, tokenData) => {
+        if (!err && tokenData) {
+            if (parseJSON(tokenData).phone === phone && parseJSON(tokenData).expires > Date.now()) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        } else {
+            callback(false);
+        }
+    });
+};
 
 module.exports = handler;
